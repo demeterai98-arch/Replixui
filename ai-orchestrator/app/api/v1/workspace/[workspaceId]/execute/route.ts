@@ -83,6 +83,27 @@ export async function POST(
       )
     }
   }
+  // 6. جلب الـ Workflow ID
+const { data: workflow, error: workflowError } = await supabase
+  .from('workflows')
+  .select('id')
+  .eq('workspace_id', workspaceId)
+  .single()
+
+if (workflowError || !workflow) {
+  return NextResponse.json(
+    { error: 'No workflow found for this workspace' },
+    { status: 404 }
+  )
+}
+
+const result = await executeWorkflow({
+  workspaceId,
+  workflowId: workflow.id, // الآن هذه القيمة صحيحة
+  input,
+  executionId: execution.id,
+  userId: user.user.id,
+})
 
   // 6. إنشاء سجل تنفيذ جديد
   const { data: execution, error: execError } = await supabase
@@ -101,6 +122,7 @@ export async function POST(
       { status: 500 }
     )
   }
+  
 
   try {
     // 7. تنفيذ الـ Workflow (تمرير كائن)
@@ -147,3 +169,5 @@ export async function POST(
     )
   }
 }
+
+//مش متاكد من جدو بش يل ان شاء الله يشتغل
