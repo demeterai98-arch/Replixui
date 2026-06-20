@@ -20,6 +20,48 @@ export async function executeWorkflow({
   executionId,
   userId,
   token,
+}: ExecuteWorkflowParams): Promise<ExecuteWorkflowResult> {
+  // التحقق من وجود workflowId
+  if (!workflowId) {
+    throw new Error('workflowId is required')
+  }
+
+  const supabase = await createClient()
+
+  // جلب الـ workflow مع الخطوات
+  const { data: workflow, error: workflowError } = await supabase
+    .from('workflows')
+    .select(`
+      id,
+      name,
+      steps:workflow_steps(
+        id,
+        step_order,
+        step_type,
+        agent_id,
+        approval_webhook_url,
+        agent:agents(
+          id,
+          name,
+          provider,
+          model,
+          system_prompt,
+          temperature,
+          max_tokens
+        )
+      )
+    `)
+    .eq('id', workflowId) // الآن لدينا workflowId صحيح
+    .single()
+}
+
+export async function executeWorkflow({
+  workspaceId,
+  workflowId,
+  input,
+  executionId,
+  userId,
+  token,
 }: ExecuteWorkflowParams) {
   // إنشاء عميل Supabase مع التوكن لضبط السياق
   const supabase = createClient(token);
