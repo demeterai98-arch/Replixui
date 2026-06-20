@@ -1,4 +1,5 @@
-import { createClient } from '@/lib/supabase/server';
+
+‏const supabase = await createClient()
 import { decrypt } from '@/lib/encryption';
 import { callOpenAI } from '@/lib/llm/openai';
 import { callAnthropic } from '@/lib/llm/anthropic';
