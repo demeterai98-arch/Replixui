@@ -4,13 +4,24 @@ import { motion } from "framer-motion";
 import Image from "next/image";
 import Link from "next/link";
 
-// مكون أيقونة متحركة (ديكور)
-const FloatingIcon = ({ src, alt, delay = 0 }) => (
+// ✅ تم تعديل المكون لقبول style وتمريره إلى عنصر motion.div
+const FloatingIcon = ({ 
+  src, 
+  alt, 
+  delay = 0, 
+  style = {} // أضفنا prop style بقيمة افتراضية
+}: { 
+  src: string; 
+  alt: string; 
+  delay?: number; 
+  style?: React.CSSProperties; 
+}) => (
   <motion.div
     initial={{ y: 0, opacity: 0.6 }}
     animate={{ y: [0, -12, 0] }}
     transition={{ duration: 4, repeat: Infinity, delay }}
     className="absolute opacity-20 dark:opacity-10 pointer-events-none"
+    style={style} // ✅ تمرير style إلى العنصر
   >
     <Image src={src} alt={alt} width={40} height={40} />
   </motion.div>
@@ -22,9 +33,10 @@ export default function Home() {
       
       {/* الخلفية الديناميكية (شبكة وتوهجات) */}
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-transparent via-transparent to-black/5 dark:to-white/5 pointer-events-none" />
+      {/* ⚠️ كلاسات bg-grid-* غير معرفة في Tailwind الأساسي، يمكنك استبدالها بخلفية SVG أو تعريفها في config */}
       <div className="absolute inset-0 bg-grid-zinc-200/20 dark:bg-grid-zinc-700/20 [mask-image:radial-gradient(ellipse_at_center,white,transparent)]" />
 
-      {/* أيقونات عائمة للزينة */}
+      {/* ✅ الآن style يعمل كما هو مطلوب */}
       <FloatingIcon src="/next.svg" alt="Next" delay={0} style={{ top: '10%', left: '5%' }} />
       <FloatingIcon src="/vercel.svg" alt="Vercel" delay={1.5} style={{ bottom: '15%', right: '8%' }} />
 
@@ -36,7 +48,6 @@ export default function Home() {
           className="w-full max-w-3xl rounded-3xl bg-white/60 backdrop-blur-xl shadow-2xl shadow-black/5 dark:bg-black/60 dark:shadow-white/5 border border-white/20 dark:border-white/10 p-8 sm:p-12 md:p-16"
         >
           <div className="flex flex-col items-center gap-10 text-center sm:items-start sm:text-left">
-            {/* الشعار مع تأثير hover */}
             <motion.div whileHover={{ scale: 1.05, rotate: -2 }} transition={{ type: "spring", stiffness: 300 }}>
               <Image
                 className="dark:invert"
@@ -48,7 +59,6 @@ export default function Home() {
               />
             </motion.div>
 
-            {/* النص الرئيسي */}
             <div className="space-y-4">
               <motion.h1
                 initial={{ opacity: 0, x: -20 }}
@@ -85,7 +95,6 @@ export default function Home() {
               </motion.p>
             </div>
 
-            {/* الأزرار */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -124,7 +133,6 @@ export default function Home() {
           </div>
         </motion.div>
 
-        {/* تذييل صغير */}
         <motion.p
           initial={{ opacity: 0 }}
           animate={{ opacity: 0.5 }}
