@@ -1,17 +1,23 @@
 // lib/supabase/client.ts
-// عميل Supabase من جهة العميل (Browser) مع دعم Session وإعادة المحاولة
+/**
+ * عميل Supabase من جهة المتصفح (Browser Client)
+ * يستخدم في Components التي تحمل 'use client'
+ * يعتمد على anon key، آمن للاستخدام في المتصفح
+ * مزود بدوال مساعدة لإدارة المستخدم والجلسة والرصيد
+ */
+
 import { createBrowserClient } from "@supabase/ssr"
 import { type SupabaseClient, type User } from "@supabase/supabase-js"
 
 // تعريف نوع موسع لعميل Supabase مع دوال مساعدة
 export interface ExtendedSupabaseClient extends SupabaseClient {
-  /** جلب المستخدم الحالي مع تخزين مؤقت */
+  /** جلب المستخدم الحالي مع تخزين مؤقت (TTL 1 دقيقة) */
   getCurrentUser: () => Promise<User | null>
-  /** تسجيل الخروج مع تنظيف التخزين */
+  /** تسجيل الخروج مع تنظيف التخزين المؤقت و localStorage */
   signOutAndClear: () => Promise<void>
-  /** التحقق من صحة الجلسة */
+  /** التحقق من صحة الجلسة (صلاحية وانتهاء) */
   isSessionValid: () => Promise<boolean>
-  /** جلب الرصيد الحالي للمستخدم */
+  /** جلب الرصيد الحالي للمستخدم من جدول profiles */
   getCredits: () => Promise<number>
 }
 
@@ -27,7 +33,7 @@ export const createClient = (): ExtendedSupabaseClient => {
   // تمديد العميل بدوال مساعدة
   const extendedClient = supabase as ExtendedSupabaseClient
 
-  // جلب المستخدم الحالي مع تخزين مؤقت
+  // تخزين مؤقت للمستخدم
   let cachedUser: User | null = null
   let userCacheTime = 0
   const CACHE_TTL = 60000 // 1 دقيقة
@@ -50,14 +56,11 @@ export const createClient = (): ExtendedSupabaseClient => {
     }
   }
 
-  // تسجيل الخروج مع تنظيف التخزين
   extendedClient.signOutAndClear = async (): Promise<void> => {
     try {
       await supabase.auth.signOut()
-      // تنظيف التخزين المؤقت للمستخدم
       cachedUser = null
       userCacheTime = 0
-      // تنظيف localStorage (اختياري)
       if (typeof window !== "undefined") {
         localStorage.removeItem("workspace-storage")
       }
@@ -67,13 +70,10 @@ export const createClient = (): ExtendedSupabaseClient => {
     }
   }
 
-  // التحقق من صحة الجلسة
   extendedClient.isSessionValid = async (): Promise<boolean> => {
     try {
       const { data: { session }, error } = await supabase.auth.getSession()
-      if (error) return false
-      if (!session) return false
-      // التحقق من انتهاء صلاحية الجلسة
+      if (error || !session) return false
       const expiresAt = session.expires_at
       if (expiresAt) {
         const now = Math.floor(Date.now() / 1000)
@@ -85,7 +85,6 @@ export const createClient = (): ExtendedSupabaseClient => {
     }
   }
 
-  // جلب الرصيد الحالي للمستخدم
   extendedClient.getCredits = async (): Promise<number> => {
     try {
       const user = await extendedClient.getCurrentUser()
@@ -110,15 +109,14 @@ export const createClient = (): ExtendedSupabaseClient => {
 
 /**
  * هوك React لإنشاء عميل Supabase (يُستخدم في Client Components)
+ * يمكن استبداله بـ useMemo أو useContext حسب الحاجة
  */
 export const useSupabaseClient = (): ExtendedSupabaseClient => {
-  // يمكنك إضافة استعلام React Query أو SWR هنا إذا أردت
-  // لكن للبساطة، نعيد نفس العميل
   return createClient()
 }
 
 /**
- * عميل Supabase مُعد مسبقاً للاستخدام المباشر
+ * عميل Supabase مُعد مسبقاً للاستخدام المباشر (مثالي للاستخدام في non-React contexts)
  */
 export const supabaseClient = createClient()
 
